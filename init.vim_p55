@@ -1,0 +1,206 @@
+call plug#begin('~/.vim/plugged')
+Plug 'junegunn/fzf'
+Plug 'junegunn/fzf.vim'
+Plug 'mhinz/vim-startify'
+" gitsigns.nvim
+Plug 'nvim-lua/plenary.nvim'
+Plug 'lewis6991/gitsigns.nvim'
+" colorscheme
+Plug 'NLKNguyen/papercolor-theme'
+Plug 'habamax/vim-freyeday'
+Plug 'aonemd/quietlight.vim'
+Plug 'sff1019/hogwarts.vim'
+Plug 'habamax/vim-polar'
+Plug 'bluz71/vim-moonfly-colors'
+Plug 'folke/tokyonight.nvim', { 'branch': 'main' }
+Plug 'mangeshrex/uwu.vim'
+Plug 'sainnhe/everforest'
+" statusline
+Plug 'itchyny/lightline.vim'
+" LSP
+Plug 'neovim/nvim-lspconfig'
+" nvim-cmp
+Plug 'hrsh7th/nvim-cmp'
+Plug 'hrsh7th/cmp-nvim-lsp'
+Plug 'hrsh7th/cmp-buffer'
+" Completion engine plugin
+Plug 'dcampos/nvim-snippy'
+Plug 'dcampos/cmp-snippy'
+" Rust
+Plug 'simrat39/rust-tools.nvim'
+" others
+Plug 'akinsho/toggleterm.nvim'
+call plug#end()
+
+set guifont=JetBrains\ Mono:h14
+
+let g:tokyonight_style = "night"
+let g:tokyonight_colors = {
+  \ 'hint': 'orange',
+  \ 'error': '#ff0000'
+\ }
+"colorscheme tokyonight
+"colorscheme hogwarts
+"colorscheme uwu
+"set background=light
+"set background=dark
+"colorscheme PaperColor
+"colorscheme fleetish
+"let g:lightline = { 'colorscheme': 'fleetish' }
+"let g:lightline = { 'colorscheme': 'PaperColor' }
+if has('termguicolors')
+    set termguicolors
+endif
+let g:everforest_background = 'hard'
+let g:everforest_disable_italic_comment = 1
+colorscheme everforest
+
+let g:lightline = {
+      \ 'colorscheme' : 'everforest',
+      \ 'component_function': {
+      \   'filename': 'LightlineFileName',
+      \ },
+      \ }
+function! LightlineFileName()
+    "return expand('%:p')
+    return expand('%:~:.')
+endfunction
+
+let mapleader = " "
+
+"set relativenumber
+set number
+set expandtab
+set tabstop=4
+set shiftwidth=4    "Indent by 4 spaces when using >>, <<, == etc.
+set softtabstop=4   "Indent by 4 spaces when pressing <TAB>
+set scrolloff=8
+set splitbelow splitright
+set cursorline
+set title
+"set signcolumn=yes
+" Set completeopt to have a better completion experience
+" :help completeopt
+" menuone: popup even when there's only one match
+" noinsert: Do not insert text until a selection is made
+" noselect: Do not select, force user to select one from the menu
+set completeopt=menuone,noinsert,noselect
+
+" Avoid showing extra messages when using completion
+"set shortmess+=c
+
+" FZF
+nnoremap <silent> <Leader>f :GFiles<CR>
+nnoremap <silent> <Leader>h :History<CR>
+nnoremap <silent> <Leader>r :RustRunnable<CR>
+
+" Auto-format *.rs (rust) files prior to saving them
+autocmd BufWritePre *.rs lua vim.lsp.buf.formatting_sync(nil, 200)
+
+tnoremap <Esc> <C-\><C-n>
+let g:floaterm_keymap_toggle = '<F12>'
+
+lua << EOF
+require('gitsigns').setup()
+require('toggleterm').setup({
+    open_mapping = [[<c-\>]],
+})
+EOF
+
+lua << EOF
+local nvim_lsp = require'lspconfig'
+
+local on_attach = function(client)
+    require'completion'.on_attach(client)
+end
+
+nvim_lsp.rust_analyzer.setup({
+    on_attach=on_attach,
+    settings = {
+        ["rust-analyzer"] = {}
+    }
+})
+EOF
+
+" Code navigation shortcuts
+nnoremap <silent> <c-]> <cmd>lua vim.lsp.buf.definition()<CR>
+nnoremap <silent> K     <cmd>lua vim.lsp.buf.hover()<CR>
+nnoremap <silent> gD    <cmd>lua vim.lsp.buf.implementation()<CR>
+nnoremap <silent> <c-k> <cmd>lua vim.lsp.buf.signature_help()<CR>
+nnoremap <silent> 1gD   <cmd>lua vim.lsp.buf.type_definition()<CR>
+nnoremap <silent> gr    <cmd>lua vim.lsp.buf.references()<CR>
+nnoremap <silent> g0    <cmd>lua vim.lsp.buf.document_symbol()<CR>
+nnoremap <silent> gW    <cmd>lua vim.lsp.buf.workspace_symbol()<CR>
+nnoremap <silent> gd    <cmd>lua vim.lsp.buf.definition()<CR>
+nnoremap <silent> ga    <cmd>lua vim.lsp.buf.code_action()<CR>
+
+" Set updatetime for CursorHold
+" 300ms of no cursor movement to trigger CursorHold
+"set updatetime=300
+" Show diagnostic popup on cursor hold
+"autocmd CursorHold * lua vim.lsp.diagnostic.show_line_diagnostics()
+
+" Goto previous/next diagnostic warning/error
+"nnoremap <silent> g[ <cmd>lua vim.lsp.diagnostic.goto_prev()<CR>
+"nnoremap <silent> g] <cmd>lua vim.lsp.diagnostic.goto_next()<CR>
+
+autocmd BufWritePre *.rs lua vim.lsp.buf.formatting_sync(nil, 1000)
+
+set completeopt=menu,menuone,noselect
+set shortmess+=c
+
+lua <<EOF
+local nvim_lsp = require'lspconfig'
+
+local opts = {
+    tools = { -- rust-tools options
+        autoSetHints = true,
+        hover_with_actions = true,
+        inlay_hints = {
+            show_parameter_hints = false,
+            parameter_hints_prefix = "",
+            other_hints_prefix = "",
+        },
+    },
+
+    server = {
+        settings = {
+            ["rust-analyzer"] = {
+                -- enable clippy on save
+                checkOnSave = {
+                    command = "clippy"
+                },
+            }
+        }
+    },
+}
+
+require('rust-tools').setup(opts)
+EOF
+
+lua <<EOF
+  local cmp = require'cmp'
+
+  cmp.setup({
+    snippet = {
+      expand = function(args)
+        require('snippy').expand_snippet(args.body)
+    end,
+    },
+    mapping = {
+      ['<c-d>'] = cmp.mapping.scroll_docs(-4),
+      ['<c-f>'] = cmp.mapping.scroll_docs(4),
+      --['<C-Space>'] = cmp.mapping.complete(),
+      ['<c-e>'] = cmp.mapping.close(),
+      ['<CR>'] = cmp.mapping.confirm({ select = true }),
+    },
+    sources = {
+      { name = 'nvim_lsp' },
+      { name = "buffer", keyword_length = 3 },
+    },
+    --experimental = {
+      --native_menu = false,
+      --ghost_text = true,
+    --},
+  })
+EOF
